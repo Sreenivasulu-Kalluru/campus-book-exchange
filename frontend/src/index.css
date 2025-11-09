@@ -1,0 +1,14 @@
+/* frontend/src/index.css */
+@import 'tailwindcss';
+
+/* This is the new v4 CSS-first configuration */
+@theme {
+  /* We define our custom colors as CSS variables.
+    Tailwind v4 automatically creates 'bg-primary', 'text-primary', etc.
+    from a variable named '--color-primary'.
+  */
+  --color-primary: #0d47a1;
+  --color-accent: #ffc107;
+  --color-light-bg: #f8f9fa;
+  --color-dark-text: #212529;
+}

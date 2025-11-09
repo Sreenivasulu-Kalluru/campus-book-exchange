@@ -1,0 +1,13 @@
+# This file tells web crawlers which parts of the site they can and cannot scan.
+
+User-agent: *
+Allow: /
+
+# Disallow indexing of private or functional pages
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /list-book
+
+# We will add the Sitemap URL here once the site is deployed
+Sitemap:
