@@ -224,7 +224,7 @@ const BookDetailPage = () => {
       <div className="p-6 bg-white rounded-lg shadow-lg md:p-8">
         <div className="flex flex-col gap-8 md:flex-row">
           {/* --- CLEANED UP IMAGE SECTION --- */}
-          <div className="flex items-center justify-center w-full overflow-hidden bg-gray-100 rounded-lg md:w-1t/3 h-80">
+          <div className="flex items-center justify-center w-full overflow-hidden bg-gray-100 rounded-lg md:w-1/3 h-80">
             {book?.imageUrl ? (
               <img
                 src={book.imageUrl}
