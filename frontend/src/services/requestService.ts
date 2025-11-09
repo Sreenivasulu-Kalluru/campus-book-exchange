@@ -105,9 +105,7 @@ export const checkRequestStatus = async (
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
-  } catch (error) {
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
-    const _ignored = error; // This is the linter-safe way to ignore the error
+  } catch {
     return { status: null };
   }
 };
