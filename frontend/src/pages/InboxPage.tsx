@@ -11,7 +11,7 @@ import type { Conversation } from '../types';
  * Renders a simple, elegant skeleton loader for the conversation list.
  */
 const ConversationSkeleton = () => (
-  <div className="flex items-center p-4 space-x-4 bg-white border rounded-lg shadow-sm animate-pulse">
+  <div className="flex items-center p-4 space-x-4 bg-white rounded-lg shadow-sm animate-pulse">
     <div className="w-16 h-16 bg-gray-300 rounded-md"></div>
     <div className="flex-1 space-y-2">
       <div className="w-3/4 h-5 bg-gray-300 rounded"></div>
