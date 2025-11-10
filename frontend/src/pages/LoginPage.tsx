@@ -1,15 +1,24 @@
 // src/pages/LoginPage.tsx
+import { useState } from 'react'; // <-- 1. Import useState
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import type { LoginCredentials, ApiError } from '../services/authService';
-import toast from 'react-hot-toast'; // <-- 1. IMPORT TOAST
+import toast from 'react-hot-toast';
+import { Eye, EyeOff } from 'lucide-react'; // <-- 2. Import Eye icons
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+
+  // --- 3. ADD STATE for password visibility ---
+  const [showPassword, setShowPassword] = useState(false);
+  // --- 4. TOGGLE FUNCTION ---
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   const {
     register,
@@ -18,10 +27,8 @@ const LoginPage = () => {
   } = useForm<LoginCredentials>();
 
   const { mutate, isPending } = useMutation({
-    // <-- 2. REMOVED isError/error
     mutationFn: loginUser,
     onSuccess: (data) => {
-      // --- 3. ON SUCCESS ---
       toast.success('Login Successful! Welcome back.');
       login(data);
       navigate('/');
@@ -29,10 +36,8 @@ const LoginPage = () => {
     onError: (error: ApiError | Error) => {
       let message = 'An unexpected error occurred.';
       if ('response' in error) {
-        // This is our ApiError
         message = error.response.data.message;
       } else if (error.message) {
-        // This is a standard Error
         message = error.message;
       }
       toast.error(message || 'Invalid email or password.');
@@ -51,7 +56,6 @@ const LoginPage = () => {
         </h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email Field (no changes) */}
           <div>
             <label
               htmlFor="email"
@@ -80,7 +84,6 @@ const LoginPage = () => {
             )}
           </div>
 
-          {/* Password Field (no changes) */}
           <div>
             <label
               htmlFor="password"
@@ -88,18 +91,35 @@ const LoginPage = () => {
             >
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              {...register('password', {
-                required: 'Password is required',
-              })}
-              className={`w-full px-3 py-2 mt-1 border rounded-md shadow-sm 
-                        ${
-                          errors.password ? 'border-red-500' : 'border-gray-300'
-                        }
-                        focus:outline-none focus:ring-2 focus:ring-primary`}
-            />
+            <div className="relative mt-1">
+              <input
+                id="password"
+                // --- 6. Dynamic type: showPassword ? 'text' : 'password' ---
+                type={showPassword ? 'text' : 'password'}
+                {...register('password', {
+                  required: 'Password is required',
+                })}
+                className={`w-full px-3 py-2 border rounded-md shadow-sm pr-10 
+                          ${
+                            errors.password
+                              ? 'border-red-500'
+                              : 'border-gray-300'
+                          }
+                          focus:outline-none focus:ring-2 focus:ring-primary`}
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">
                 {errors.password.message}
@@ -107,9 +127,6 @@ const LoginPage = () => {
             )}
           </div>
 
-          {/* 5. REMOVED the old server error message here */}
-
-          {/* Submit Button (no changes) */}
           <div>
             <button
               type="submit"
@@ -120,7 +137,6 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Link to Register (no changes) */}
           <p className="text-sm text-center text-dark-text">
             Don't have an account?{' '}
             <Link
