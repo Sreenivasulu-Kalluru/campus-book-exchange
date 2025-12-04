@@ -1,4 +1,4 @@
-# 📚 CampusBookEx: Peer-to-Peer Academic Book Exchange Platform
+# 📚 CampusBookEx: Peer-to-Peer Academic Book Exchange Platform for students
 
 **CampusBookEx** is a full-stack web application designed to facilitate the **secure, real-time exchange of textbooks and study materials** among students within a specific academic campus. It moves the traditional, chaotic bulletin board system online, providing a modern, efficient, and cost-saving solution.
 
