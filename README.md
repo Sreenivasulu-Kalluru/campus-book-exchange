@@ -117,3 +117,7 @@ npm run seeder:import
     ```
 
 The application will be live at `http://localhost:5173`.
+
+## 📄 License
+
+This project is licensed under the MIT License.
