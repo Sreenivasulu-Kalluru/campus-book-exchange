@@ -5,14 +5,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 // --- 1. IMPORT UPLOAD SERVICE ---
-import { createBook } from '../../services/bookService';
-import { uploadImage } from '../../services/uploadService'; // <-- NEW
+import { createBook, updateBook } from '../../services/bookService';
+import { uploadImage, uploadPdf } from '../../services/uploadService'; // <-- Updated import
+import { AxiosError } from 'axios';
 
 import type { CreateBookData, Book } from '../../types';
 import toast from 'react-hot-toast';
 import Modal from './Modal';
 import { useUIStore } from '../../store/uiStore';
-import { UploadCloud, Image as ImageIcon } from 'lucide-react'; // <-- NEW ICONS
+import { UploadCloud, Image as ImageIcon, FileText } from 'lucide-react'; // <-- Re-added UploadCloud
 
 // --- 2. NEW FORM TYPE ---
 // This is the data from our form, which includes the 'image' FileList
@@ -22,13 +23,16 @@ type ListBookFormData = {
   condition: 'New' | 'Good' | 'Used';
   isbn?: string;
   image: FileList;
+  pdf: FileList; // <-- Added pdf field
 };
 
+// Removed ListBookModalProps since we use store now
 const ListBookModal = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isListBookModalOpen = useUIStore((state) => state.isListBookModalOpen);
   const closeListBookModal = useUIStore((state) => state.closeListBookModal);
+  const bookToEdit = useUIStore((state) => state.bookToEdit); // <-- Get from store
 
   // --- 3. LOCAL STATE FOR IMAGE PREVIEW ---
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -41,23 +45,51 @@ const ListBookModal = () => {
     formState: { errors },
   } = useForm<ListBookFormData>(); // <-- 4. USE NEW FORM TYPE
 
+  // Pre-fill form if editing
+  React.useEffect(() => {
+    if (bookToEdit) {
+      reset({
+        title: bookToEdit.title,
+        author: bookToEdit.author,
+        condition: bookToEdit.condition,
+        isbn: bookToEdit.isbn,
+      });
+      if (bookToEdit.imageUrl) {
+        setImagePreview(bookToEdit.imageUrl);
+      }
+    } else {
+      reset({
+        title: '',
+        author: '',
+        condition: 'New', // Default
+        isbn: '',
+      });
+      setImagePreview(null);
+    }
+  }, [bookToEdit, reset]);
+
   // Watch the 'image' field to update the preview
   const imageFile = watch('image');
   React.useEffect(() => {
     if (imageFile && imageFile.length > 0) {
       const file = imageFile[0];
       setImagePreview(URL.createObjectURL(file));
-    } else {
+    } else if (!bookToEdit?.imageUrl) {
+      // Only clear preview if not editing or no image in edit mode
       setImagePreview(null);
     }
-  }, [imageFile]);
+  }, [imageFile, bookToEdit]);
 
   // --- 5. UPDATE MUTATION TO CHAIN API CALLS ---
-  const { mutate, isPending } = useMutation<Book, Error, ListBookFormData>({
+  const { mutate, isPending } = useMutation<
+    Book,
+    AxiosError<{ message: string }>,
+    ListBookFormData
+  >({
     mutationFn: async (data: ListBookFormData) => {
-      let imageUrl = ''; // Default empty string
+      let imageUrl = '';
+      let pdfUrl = '';
 
-      // --- 5a. UPLOAD IMAGE (if one exists) ---
       if (data.image && data.image.length > 0) {
         toast.loading('Uploading image...');
         const file = data.image[0];
@@ -65,31 +97,53 @@ const ListBookModal = () => {
         formData.append('image', file);
 
         imageUrl = await uploadImage(formData);
-        toast.dismiss(); // Dismiss the "uploading" toast
+        toast.dismiss();
       }
 
-      // --- 5b. PREPARE BOOK DATA ---
-      const bookData: CreateBookData = {
-        title: data.title,
-        author: data.author,
-        condition: data.condition,
-        isbn: data.isbn,
-        imageUrl: imageUrl, // Use the new URL (or empty string)
-      };
+      if (data.pdf && data.pdf.length > 0) {
+        toast.loading('Uploading PDF...');
+        const file = data.pdf[0];
+        const formData = new FormData();
+        formData.append('pdf', file);
 
-      // --- 5c. CREATE THE BOOK ---
-      return createBook(bookData);
+        pdfUrl = await uploadPdf(formData);
+        toast.dismiss();
+      }
+
+      if (bookToEdit) {
+        const updateData: Partial<CreateBookData> = {
+          title: data.title,
+          author: data.author,
+          condition: data.condition,
+          isbn: data.isbn,
+        };
+        if (imageUrl) updateData.imageUrl = imageUrl;
+        if (pdfUrl) updateData.pdfUrl = pdfUrl;
+
+        return updateBook(bookToEdit._id, updateData);
+      } else {
+        return createBook({
+          title: data.title,
+          author: data.author,
+          condition: data.condition,
+          isbn: data.isbn,
+          imageUrl: imageUrl,
+          pdfUrl: pdfUrl,
+        });
+      }
     },
     onSuccess: (data) => {
-      toast.success('Your book has been listed!');
+      toast.success(
+        bookToEdit ? 'Book updated successfully!' : 'Your book has been listed!'
+      );
       queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['book', data._id] }); // Invalidate specific book
       queryClient.invalidateQueries({ queryKey: ['myListings'] });
 
       handleClose(); // Close modal and clear form
-
-      navigate(`/book/${data._id}`);
+      if (!bookToEdit) navigate(`/book/${data._id}`); // Only navigate on create
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message: string }>) => {
       toast.dismiss(); // Dismiss loading toast if it was there
       const message = error.response?.data?.message || error.message;
       toast.error(message);
@@ -110,11 +164,11 @@ const ListBookModal = () => {
     <Modal
       isOpen={isListBookModalOpen}
       onClose={handleClose}
-      title="List Your Book"
+      title={bookToEdit ? 'Edit Your Book' : 'List Your Book'}
     >
       {/* --- 6. UPDATE FORM --- */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Title, Author, Condition (unchanged) ... */}
+        {/* Title */}
         <div>
           <label
             htmlFor="title-modal"
@@ -134,6 +188,8 @@ const ListBookModal = () => {
             <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
           )}
         </div>
+
+        {/* Author */}
         <div>
           <label
             htmlFor="author-modal"
@@ -153,6 +209,8 @@ const ListBookModal = () => {
             <p className="mt-1 text-sm text-red-600">{errors.author.message}</p>
           )}
         </div>
+
+        {/* Condition */}
         <div>
           <label
             htmlFor="condition-modal"
@@ -179,14 +237,14 @@ const ListBookModal = () => {
           )}
         </div>
 
-        {/* --- 7. NEW IMAGE UPLOAD FIELD --- */}
+        {/* Image Upload */}
         <div>
           <label className="block text-sm font-medium text-dark-text">
             Book Cover (Optional)
           </label>
           <div className="flex items-center mt-1 space-x-4">
             {/* Image Preview */}
-            <div className="flex items-center justify-center w-24 h-24 overflow-hidden bg-gray-100 rounded-md">
+            <div className="flex items-center justify-center w-24 h-24 overflow-hidden bg-gray-100 rounded-md shrink-0">
               {imagePreview ? (
                 <img
                   src={imagePreview}
@@ -200,18 +258,18 @@ const ListBookModal = () => {
             {/* File Input */}
             <label
               htmlFor="image-file"
-              className="flex flex-col items-center justify-center flex-1 px-6 py-4 border-2 border-gray-300 border-dashed rounded-md cursor-pointer  hover:border-primary"
+              className="flex flex-col items-center justify-center flex-1 px-6 py-4 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-primary"
             >
               <UploadCloud className="w-8 h-8 text-gray-400" />
               <span className="mt-2 text-sm text-gray-600">
-                Click to upload a file
+                Click to upload image
               </span>
               <input
                 id="image-file"
                 type="file"
                 {...register('image')}
                 accept="image/png, image/jpeg, image/jpg"
-                className="hidden" // The label handles the click
+                className="hidden"
               />
             </label>
           </div>
@@ -220,7 +278,44 @@ const ListBookModal = () => {
           )}
         </div>
 
-        {/* ISBN Field (unchanged) */}
+        {/* PDF Upload */}
+        <div>
+          <label className="block text-sm font-medium text-dark-text">
+            Book PDF Preview (Optional)
+          </label>
+          <div className="flex items-center mt-1 space-x-4">
+            {/* PDF Icon Placeholder */}
+            <div className="flex items-center justify-center w-24 h-24 overflow-hidden bg-gray-100 rounded-md shrink-0">
+              <FileText className="w-10 h-10 text-gray-400" />
+            </div>
+
+            <label
+              htmlFor="pdf-file"
+              className="flex flex-col items-center justify-center flex-1 px-6 py-4 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-primary"
+            >
+              <UploadCloud className="w-8 h-8 text-gray-400" />
+              <span className="mt-2 text-sm text-gray-600">
+                {watch('pdf') && watch('pdf').length > 0
+                  ? 'Change PDF'
+                  : 'Click to upload PDF'}
+              </span>
+              <input
+                id="pdf-file"
+                type="file"
+                {...register('pdf')}
+                accept="application/pdf"
+                className="hidden"
+              />
+            </label>
+          </div>
+          {watch('pdf') && watch('pdf').length > 0 && (
+            <p className="mt-1 text-sm text-gray-600">
+              Selected: {watch('pdf')[0].name}
+            </p>
+          )}
+        </div>
+
+        {/* ISBN Field */}
         <div>
           <label
             htmlFor="isbn-modal"
@@ -243,7 +338,13 @@ const ListBookModal = () => {
             disabled={isPending}
             className="w-full px-4 py-2 font-semibold text-white transition-all duration-300 rounded-lg shadow-md  bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-accent disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {isPending ? 'Listing Book...' : 'List My Book'}
+            {isPending
+              ? bookToEdit
+                ? 'Updating...'
+                : 'Creating New Book...'
+              : bookToEdit
+              ? 'Update Book'
+              : 'Create New Book'}
           </button>
         </div>
       </form>

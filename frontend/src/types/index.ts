@@ -15,6 +15,7 @@ export type Book = {
   status: 'Available' | 'Sold';
   isbn?: string;
   imageUrl?: string;
+  pdfUrl?: string; // <-- Added pdfUrl
   createdAt: string;
   updatedAt: string;
 };
@@ -66,6 +67,7 @@ export type CreateBookData = {
   condition: 'New' | 'Good' | 'Used';
   isbn?: string;
   imageUrl?: string;
+  pdfUrl?: string; // <-- Added pdfUrl
 };
 
 export type ApiError = {

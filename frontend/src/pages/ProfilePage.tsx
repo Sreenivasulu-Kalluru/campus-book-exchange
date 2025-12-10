@@ -356,7 +356,7 @@ const ProfilePage = () => {
             My Available Listings
           </h2>
           <button
-            onClick={openListBookModal}
+            onClick={() => openListBookModal()}
             className="flex items-center justify-center px-4 py-2 font-medium text-white transition-all duration-300 rounded-lg shadow-sm bg-primary hover:bg-blue-800 hover:shadow-md"
           >
             <PlusCircle className="w-5 h-5 mr-2" />

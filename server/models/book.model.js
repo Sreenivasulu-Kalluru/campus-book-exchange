@@ -27,6 +27,10 @@ const bookSchema = new Schema(
       type: String,
       default: '',
     },
+    pdfUrl: {
+      type: String,
+      default: '',
+    },
     status: {
       type: String,
       enum: ['Available', 'Sold'],

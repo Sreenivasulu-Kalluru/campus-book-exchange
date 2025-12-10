@@ -19,7 +19,19 @@ const storageImage = new CloudinaryStorage({
   },
 });
 
-// --- We only export one upload handler ---
-const upload = multer({ storage: storageImage });
+const storagePdf = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'campus-book-exchange/pdfs',
+    resource_type: 'auto',
+    allowed_formats: ['pdf'],
+  },
+});
 
-module.exports = upload; // Changed from an object
+const uploadImage = multer({ storage: storageImage });
+const uploadPdf = multer({ storage: storagePdf });
+
+module.exports = {
+  uploadImage,
+  uploadPdf,
+};

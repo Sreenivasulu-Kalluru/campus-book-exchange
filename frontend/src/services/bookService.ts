@@ -76,3 +76,21 @@ export const createBook = async (data: CreateBookData): Promise<Book> => {
   });
   return response.data;
 };
+
+/**
+ * Updates an existing book listing.
+ */
+export const updateBook = async (
+  id: string,
+  data: Partial<CreateBookData>
+): Promise<Book> => {
+  const token = useAuthStore.getState().token;
+  if (!token) throw new Error('Not authorized');
+
+  const response = await api.put(`/books/${id}`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};

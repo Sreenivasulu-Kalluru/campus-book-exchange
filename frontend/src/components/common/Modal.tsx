@@ -29,14 +29,14 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
 
           {/* 2. The modal content window */}
           <motion.div
-            className="relative z-10 w-full max-w-lg bg-white rounded-lg shadow-xl"
+            className="relative z-10 w-full max-w-lg flex flex-col max-h-[90vh] bg-white rounded-lg shadow-xl"
             initial={{ scale: 0.9, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 50 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center justify-between p-4 border-b shrink-0">
               <h3 className="text-xl font-semibold text-primary">{title}</h3>
               <button
                 onClick={onClose}
@@ -47,7 +47,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
             </div>
 
             {/* Modal Body (where our content will go) */}
-            <div className="p-6">{children}</div>
+            <div className="p-6 overflow-y-auto">{children}</div>
           </motion.div>
         </motion.div>
       )}

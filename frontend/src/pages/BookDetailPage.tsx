@@ -7,7 +7,9 @@ import { createRequest, checkRequestStatus } from '../services/requestService';
 import type { ApiError } from '../services/requestService';
 import type { Book } from '../types';
 import { useAuthStore } from '../store/authStore';
+import { useUIStore } from '../store/uiStore';
 import Modal from '../components/common/Modal';
+import BookPreviewModal from '../components/common/BookPreviewModal'; // <--- Added import
 import toast from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -18,7 +20,8 @@ import {
   ArrowLeft,
   Send,
   Loader2,
-} from 'lucide-react'; // Removed FileText and Download
+  FileText,
+} from 'lucide-react';
 
 /**
  * Skeleton loader component for the detail page.
@@ -47,6 +50,9 @@ const BookDetailPage = () => {
 
   const isAuth = useAuthStore((state) => state.isAuth);
   const user = useAuthStore((state) => state.user);
+  const openBookPreviewModal = useUIStore(
+    (state) => state.openBookPreviewModal
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -70,7 +76,6 @@ const BookDetailPage = () => {
     enabled: isAuth && !!id,
   });
 
-  // --- UPDATED logic to get status ---
   const requestStatus = requestState?.status || null;
 
   // --- Data Mutation (Send Request) ---
@@ -95,8 +100,6 @@ const BookDetailPage = () => {
     },
   });
 
-  // --- DELETED 'download' mutation ---
-
   // --- Event Handlers ---
   const handleRequestClick = () => {
     if (!isAuth) {
@@ -116,17 +119,26 @@ const BookDetailPage = () => {
   // --- Derived State ---
   const isLister = user?._id === book?.lister?._id;
   const isProcessing = isRequesting; // Simplified
+  const openListBookModal = useUIStore((state) => state.openListBookModal); // Get action
 
   // --- Helper to render the main button ---
   const renderCallToAction = () => {
     if (isLister) {
       return (
-        <button
-          disabled
-          className="w-full px-6 py-3 text-lg font-bold text-gray-500 bg-gray-300 rounded-lg cursor-not-allowed md:w-1/2"
-        >
-          This is your listing
-        </button>
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <button
+            disabled
+            className="w-full px-6 py-3 text-lg font-bold text-gray-500 bg-gray-300 rounded-lg cursor-not-allowed"
+          >
+            This is your listing
+          </button>
+          <button
+            onClick={() => openListBookModal(book)}
+            className="w-full px-6 py-3 text-lg font-bold text-white transition-all duration-300 rounded-lg shadow-md bg-primary hover:bg-blue-800"
+          >
+            Edit Book
+          </button>
+        </div>
       );
     }
 
@@ -269,7 +281,18 @@ const BookDetailPage = () => {
 
             {renderCallToAction()}
 
-            {/* --- DELETED 'canDownload' PARAGRAPH --- */}
+            {/* --- PDF Preview Button --- */}
+            {book?.pdfUrl && (
+              <div className="mt-4">
+                <button
+                  onClick={() => openBookPreviewModal(book.pdfUrl!)}
+                  className="flex items-center text-primary hover:underline"
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  View Book Preview (PDF)
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -323,6 +346,7 @@ const BookDetailPage = () => {
           </div>
         </form>
       </Modal>
+      <BookPreviewModal />
     </div>
   );
 };
