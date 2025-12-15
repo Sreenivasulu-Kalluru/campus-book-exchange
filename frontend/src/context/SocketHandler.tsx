@@ -37,10 +37,44 @@ const SocketHandler = () => {
 
     socket.on('receiveMessage', (newMessage: Message) => {
       console.log('Socket: Received "receiveMessage"');
+      const currentUserId = useAuthStore.getState().user?._id;
+
       queryClient.setQueryData(
         ['messages', newMessage.conversationId],
         (oldData: Message[] | undefined) => {
-          return oldData ? [...oldData, newMessage] : [newMessage];
+          if (!oldData) return [newMessage];
+
+          // 1. Check if we already have this EXACT message (by _id) to prevent double-inserts
+          if (oldData.some((msg) => msg._id === newMessage._id)) {
+            return oldData;
+          }
+
+          // 2. If WE sent it, look for the optimistic version to replace
+          if (currentUserId && newMessage.sender === currentUserId) {
+            // Find an optimistic message: matches sender & content, but has a different ID
+            // We search from the end because it was likely just added
+            const optimisticIndex = [...oldData]
+              .reverse()
+              .findIndex(
+                (msg) =>
+                  msg.sender === currentUserId &&
+                  msg.content === newMessage.content &&
+                  msg._id !== newMessage._id
+              );
+
+            if (optimisticIndex !== -1) {
+              // Calculate the actual index in the original array
+              const actualIndex = oldData.length - 1 - optimisticIndex;
+
+              // Replace the optimistic message with the real one
+              const newData = [...oldData];
+              newData[actualIndex] = newMessage;
+              return newData;
+            }
+          }
+
+          // 3. Otherwise, just append it
+          return [...oldData, newMessage];
         }
       );
     });

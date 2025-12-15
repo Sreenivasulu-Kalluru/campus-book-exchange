@@ -10,6 +10,7 @@ const { Server } = require('socket.io'); // Import the socket.io Server
 // --- Import middleware ---
 const { errorHandler } = require('./middleware/errorMiddleware');
 const Message = require('./models/message.model');
+const Conversation = require('./models/conversation.model');
 
 // Create an Express app
 const app = express();
@@ -37,8 +38,13 @@ const io = new Server(server, {
 let onlineUsers = [];
 
 const addUser = (userId, socketId) => {
-  !onlineUsers.some((user) => user.userId === userId) &&
+  const existingUser = onlineUsers.find((user) => user.userId === userId);
+  if (existingUser) {
+    existingUser.socketId = socketId;
+  } else {
     onlineUsers.push({ userId, socketId });
+  }
+  // console.log("Current online users:", onlineUsers);
 };
 
 const removeUser = (socketId) => {
@@ -66,35 +72,56 @@ io.on('connection', (socket) => {
     console.log(`A user disconnected: ${socket.id}`);
   });
 
-  // This runs when they close the app
-  socket.on('disconnect', () => {
-    removeUser(socket.id);
-    console.log(`A user disconnected: ${socket.id}`);
-  });
-
   // --- 2. ADD THIS NEW EVENT LISTENER ---
   socket.on(
     'sendMessage',
     async ({ conversationId, senderId, receiverId, content }) => {
       try {
+        console.log(
+          `Socket: Received message for convo ${conversationId} from ${senderId}`
+        );
+
         // 1. Save the new message to the database
         const newMessage = new Message({
           conversationId,
           sender: senderId,
           content,
         });
-        await newMessage.save();
+        const savedMessage = await newMessage.save();
+        console.log('Socket: Message saved successfully:', savedMessage._id);
 
-        // 2. Find the receiver (if they are online)
+        // 2. Update the conversation's updatedAt timestamp
+        await Conversation.findByIdAndUpdate(conversationId, {
+          updatedAt: new Date(),
+        });
+
+        // 3. Find the receiver (if they are online)
         const receiver = getUser(receiverId);
 
+        // 4. Send the message to receiver in real-time
         if (receiver) {
-          // 3. Send the message to them in real-time
           io.to(receiver.socketId).emit('receiveMessage', {
+            _id: savedMessage._id, // Send the real ID
             conversationId,
             sender: senderId,
             content,
-            createdAt: newMessage.createdAt, // Send the timestamp
+            createdAt: savedMessage.createdAt,
+          });
+          console.log(`Socket: Emitted to receiver ${receiverId}`);
+        } else {
+          console.log(`Socket: Receiver ${receiverId} is not online.`);
+        }
+
+        // 5. Send confirmation to sender (so they get the real ID and know it's saved)
+        // This helps if the optimistic update needs to be reconciled or just for confirmation
+        const sender = getUser(senderId);
+        if (sender) {
+          io.to(sender.socketId).emit('receiveMessage', {
+            _id: savedMessage._id,
+            conversationId,
+            sender: senderId,
+            content,
+            createdAt: savedMessage.createdAt,
           });
         }
       } catch (error) {

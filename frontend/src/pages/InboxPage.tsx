@@ -45,7 +45,7 @@ const ConversationCard = ({
     >
       {/* Book Image or Placeholder */}
       <div className="flex items-center justify-center w-16 h-16 overflow-hidden bg-gray-100 rounded-md shrink-0">
-        {conversation.book.imageUrl ? (
+        {conversation.book?.imageUrl ? (
           <img
             src={conversation.book.imageUrl}
             alt={conversation.book.title}
@@ -63,9 +63,10 @@ const ConversationCard = ({
         </p>
         <p
           className="text-sm text-gray-700 truncate"
-          title={conversation.book.title}
+          title={conversation.book?.title || 'Book Unavailable'}
         >
-          <span className="font-medium">Book:</span> {conversation.book.title}
+          <span className="font-medium">Book:</span>{' '}
+          {conversation.book ? conversation.book.title : 'Book Unavailable'}
         </p>
         <p className="text-sm text-gray-500">
           Last updated: {new Date(conversation.updatedAt).toLocaleDateString()}

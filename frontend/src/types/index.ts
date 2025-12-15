@@ -86,7 +86,7 @@ export type Conversation = {
     _id: string;
     title: string;
     imageUrl?: string;
-  };
+  } | null;
   createdAt: string;
   updatedAt: string;
 };
