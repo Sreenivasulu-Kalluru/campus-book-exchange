@@ -97,3 +97,9 @@ export type Message = {
   content: string;
   createdAt: string;
 };
+
+export type Notification = {
+  message: string;
+  bookId: string;
+  requesterName: string;
+};

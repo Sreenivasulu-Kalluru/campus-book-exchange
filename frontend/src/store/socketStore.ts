@@ -10,5 +10,9 @@ type SocketState = {
 // This store will just hold the socket instance
 export const useSocketStore = create<SocketState>((set) => ({
   socket: null,
-  setSocket: (socket) => set({ socket }),
+  setSocket: (socket) =>
+    set((state) => {
+      if (state.socket === socket) return {};
+      return { socket };
+    }),
 }));

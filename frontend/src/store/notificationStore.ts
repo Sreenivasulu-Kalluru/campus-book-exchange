@@ -1,11 +1,6 @@
 // src/store/notificationStore.ts
 import { create } from 'zustand';
-
-type Notification = {
-  message: string;
-  bookId: string;
-  requesterName: string;
-};
+import type { Notification } from '../types';
 
 type NotificationState = {
   notifications: Notification[];
