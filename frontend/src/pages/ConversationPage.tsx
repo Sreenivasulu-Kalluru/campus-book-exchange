@@ -119,7 +119,9 @@ const ConversationPage = () => {
         <title>Chat with {otherUser.name} - CampusBookEx</title>
         <meta
           name="description"
-          content={`Conversation about the book: ${conversation.book.title}`}
+          content={`Conversation about the book: ${
+            conversation.book?.title || 'Unknown Book'
+          }`}
         />
       </Helmet>
 
@@ -136,7 +138,7 @@ const ConversationPage = () => {
             {otherUser.name}
           </p>
           <p className="text-sm text-gray-500 truncate">
-            Regarding: {conversation.book.title}
+            Regarding: {conversation.book?.title || 'Unknown Book'}
           </p>
         </div>
       </div>
