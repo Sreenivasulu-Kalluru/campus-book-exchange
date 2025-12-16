@@ -10,7 +10,7 @@ const User = require('../models/user.model');
  */
 const createBook = asyncHandler(async (req, res) => {
   // 1. Get book details (price removed)
-  const { title, author, condition, isbn, imageUrl, pdfUrl } = req.body;
+  const { title, author, condition, isbn, imageUrl } = req.body;
 
   // 2. Validation (price removed)
   if (!title || !author || !condition) {
@@ -27,7 +27,7 @@ const createBook = asyncHandler(async (req, res) => {
     condition,
     isbn: isbn || '',
     imageUrl: imageUrl || '',
-    pdfUrl: pdfUrl || '',
+
     lister: req.user._id, // Changed from 'seller'
   });
 

@@ -1,19 +1,19 @@
 // src/components/common/ListBookModal.tsx
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 // --- 1. IMPORT UPLOAD SERVICE ---
-import { createBook, updateBook } from '../../services/bookService';
-import { uploadImage, uploadPdf } from '../../services/uploadService'; // <-- Updated import
 import { AxiosError } from 'axios';
+import { createBook, updateBook } from '../../services/bookService';
+import { uploadImage } from '../../services/uploadService'; // <-- Updated import
 
-import type { CreateBookData, Book } from '../../types';
+import { UploadCloud, Image as ImageIcon } from 'lucide-react'; // <-- Re-added UploadCloud
 import toast from 'react-hot-toast';
-import Modal from './Modal';
 import { useUIStore } from '../../store/uiStore';
-import { UploadCloud, Image as ImageIcon, FileText } from 'lucide-react'; // <-- Re-added UploadCloud
+import type { Book, CreateBookData } from '../../types';
+import Modal from './Modal';
 
 // --- 2. NEW FORM TYPE ---
 // This is the data from our form, which includes the 'image' FileList
@@ -23,7 +23,6 @@ type ListBookFormData = {
   condition: 'New' | 'Good' | 'Used';
   isbn?: string;
   image: FileList;
-  pdf: FileList; // <-- Added pdf field
 };
 
 // Removed ListBookModalProps since we use store now
@@ -88,7 +87,6 @@ const ListBookModal = () => {
   >({
     mutationFn: async (data: ListBookFormData) => {
       let imageUrl = '';
-      let pdfUrl = '';
 
       if (data.image && data.image.length > 0) {
         toast.loading('Uploading image...');
@@ -100,16 +98,6 @@ const ListBookModal = () => {
         toast.dismiss();
       }
 
-      if (data.pdf && data.pdf.length > 0) {
-        toast.loading('Uploading PDF...');
-        const file = data.pdf[0];
-        const formData = new FormData();
-        formData.append('pdf', file);
-
-        pdfUrl = await uploadPdf(formData);
-        toast.dismiss();
-      }
-
       if (bookToEdit) {
         const updateData: Partial<CreateBookData> = {
           title: data.title,
@@ -118,7 +106,6 @@ const ListBookModal = () => {
           isbn: data.isbn,
         };
         if (imageUrl) updateData.imageUrl = imageUrl;
-        if (pdfUrl) updateData.pdfUrl = pdfUrl;
 
         return updateBook(bookToEdit._id, updateData);
       } else {
@@ -128,7 +115,6 @@ const ListBookModal = () => {
           condition: data.condition,
           isbn: data.isbn,
           imageUrl: imageUrl,
-          pdfUrl: pdfUrl,
         });
       }
     },
@@ -275,43 +261,6 @@ const ListBookModal = () => {
           </div>
           {errors.image && (
             <p className="mt-1 text-sm text-red-600">{errors.image.message}</p>
-          )}
-        </div>
-
-        {/* PDF Upload */}
-        <div>
-          <label className="block text-sm font-medium text-dark-text">
-            Book PDF Preview (Optional)
-          </label>
-          <div className="flex items-center mt-1 space-x-4">
-            {/* PDF Icon Placeholder */}
-            <div className="flex items-center justify-center w-24 h-24 overflow-hidden bg-gray-100 rounded-md shrink-0">
-              <FileText className="w-10 h-10 text-gray-400" />
-            </div>
-
-            <label
-              htmlFor="pdf-file"
-              className="flex flex-col items-center justify-center flex-1 px-6 py-4 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-primary"
-            >
-              <UploadCloud className="w-8 h-8 text-gray-400" />
-              <span className="mt-2 text-sm text-gray-600">
-                {watch('pdf') && watch('pdf').length > 0
-                  ? 'Change PDF'
-                  : 'Click to upload PDF'}
-              </span>
-              <input
-                id="pdf-file"
-                type="file"
-                {...register('pdf')}
-                accept="application/pdf"
-                className="hidden"
-              />
-            </label>
-          </div>
-          {watch('pdf') && watch('pdf').length > 0 && (
-            <p className="mt-1 text-sm text-gray-600">
-              Selected: {watch('pdf')[0].name}
-            </p>
           )}
         </div>
 

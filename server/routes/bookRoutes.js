@@ -8,12 +8,9 @@ const {
   deleteBook,
   getMyListings,
   getMyHistory,
-  manageBookPdf, // <-- ADD THIS
-  deleteBookPdf, // <-- ADD THIS
-  downloadBookPdf,
 } = require('../controllers/bookController');
 const { protect } = require('../middleware/authMiddleware');
-const { uploadImage, uploadPdf } = require('../config/cloudinary');
+const { uploadImage } = require('../config/cloudinary');
 
 // --- Routes for /api/books ---
 router

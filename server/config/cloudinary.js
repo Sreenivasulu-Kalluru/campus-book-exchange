@@ -19,19 +19,8 @@ const storageImage = new CloudinaryStorage({
   },
 });
 
-const storagePdf = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'campus-book-exchange/pdfs',
-    resource_type: 'auto',
-    allowed_formats: ['pdf'],
-  },
-});
-
 const uploadImage = multer({ storage: storageImage });
-const uploadPdf = multer({ storage: storagePdf });
 
 module.exports = {
   uploadImage,
-  uploadPdf,
 };
