@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage';
 import SocketHandler from './context/SocketHandler'; // Don't forget this
 import InboxPage from './pages/InboxPage'; // <-- 1. IMPORT
 import ConversationPage from './pages/ConversationPage'; // <-- 2. IMPORT
+import CookieConsent from './components/CookieConsent';
 
 // --- THIS IS THE CORRECTED ROUTER ---
 const router = createBrowserRouter([
@@ -70,6 +71,7 @@ function App() {
     <>
       <SocketHandler />
       <RouterProvider router={router} />
+      <CookieConsent />
     </>
   );
 }
